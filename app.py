@@ -50,7 +50,6 @@ if 'search_teacher' not in st.session_state: st.session_state['search_teacher'] 
 
 # ================= 辅助函数 =================
 def col2num(col_str):
-    """将 Excel 字母 (如 V, Y, AE) 转换为 Python 索引 (0, 1, 2)"""
     expn = 0; col_num = 0
     for char in reversed(col_str.upper().strip()):
         col_num += (ord(char) - ord('A') + 1) * (26 ** expn)
@@ -90,7 +89,8 @@ def convert_df_to_excel_pro(df, sheet_name, title):
             c.border = thin_border
             
         for r_idx in range(4, max_row + 1):
-            worksheet.row_dimensions[r_idx].height = 25 
+            # 因为带有换行的班级标签，增加行高让它不拥挤
+            worksheet.row_dimensions[r_idx].height = 35 
             for c_idx in range(1, max_col + 1):
                 c = worksheet.cell(row=r_idx, column=c_idx)
                 c.alignment = center_align
@@ -99,7 +99,8 @@ def convert_df_to_excel_pro(df, sheet_name, title):
                     
         for i in range(1, max_col + 1):
             if i <= num_index_cols: worksheet.column_dimensions[get_column_letter(i)].width = 14 
-            else: worksheet.column_dimensions[get_column_letter(i)].width = 20 
+            # 【优化】：为了显示班级小括号，将数据列宽度调宽至22
+            else: worksheet.column_dimensions[get_column_letter(i)].width = 22
 
     return output.getvalue()
 
@@ -112,13 +113,12 @@ def clean_excel_data(df):
             is_schedule = True; break
             
     if is_schedule:
-        # 为了保证 Excel 字母与列索引绝对一致，排课表【绝对不删除任何空列】
         new_cols = []
         for idx, col in enumerate(df.columns):
             letter = get_column_letter(idx + 1)
             c = str(col).strip()
             if pd.isna(col) or c.lower() in ['nan', '', 'unnamed'] or 'unnamed' in c.lower():
-                c = letter # 直接用字母命名，如 "Y"
+                c = letter 
             else:
                 c = f"{letter}_{c}"
             
@@ -126,7 +126,7 @@ def clean_excel_data(df):
             while c in new_cols: c = f"{base}_{counter}"; counter += 1
             new_cols.append(c)
         df.columns = new_cols
-        return df.dropna(how='all', axis=0) # 仅删空行，保留所有列
+        return df.dropna(how='all', axis=0) 
     else:
         header_idx = -1
         for i in range(min(10, len(df))):
@@ -198,7 +198,6 @@ if st.session_state['all_sheets'] is not None:
     st.sidebar.markdown('<h4 style="color:#2a5298;">🧑‍🏫 个人课表生成器</h4>', unsafe_allow_html=True)
     search_input = st.sidebar.text_input("🔍 输入教师姓名：", placeholder="例如：韩志然")
     
-    # 增加专属精准定位输入框
     with st.sidebar.expander("⚙️ 课表坐标设置 (默认 V, W, Y-AE)"):
         col_t1, col_t2 = st.columns(2)
         with col_t1: t_period = st.text_input("【节次】列", value="V")
@@ -207,7 +206,7 @@ if st.session_state['all_sheets'] is not None:
         with col_t3: t_start = st.text_input("【课表起】", value="Y")
         with col_t4: t_end = st.text_input("【课表止】", value="AE")
 
-    if st.sidebar.button("🔎 一键生成网格课表", use_container_width=True):
+    if st.sidebar.button("🔎 一键生成全周期网格课表", use_container_width=True):
         if search_input.strip() == "": st.sidebar.warning("请先输入教师姓名！")
         else:
             st.session_state['teacher_mode'] = True
@@ -279,12 +278,11 @@ if st.session_state['all_sheets'] is not None:
 
     # ================= 核心视图分支 =================
     
-    # 模式一：【教师个人二维网格课表 (绝对坐标还原版)】 
+    # 模式一：【教师个人二维网格课表 (满血版)】 
     if st.session_state['teacher_mode']:
         target_teacher = st.session_state['search_teacher']
-        st.markdown(f"<h3 style='color:#1e3c72;'>🧑‍🏫 【{target_teacher}】个人专属网格课表</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color:#1e3c72;'>🧑‍🏫 【{target_teacher}】所有周次专属网格课表</h3>", unsafe_allow_html=True)
         
-        # 将字母转换为绝对索引
         p_idx = col2num(st.session_state['t_period'])
         t_idx = col2num(st.session_state['t_time'])
         start_idx = col2num(st.session_state['t_start'])
@@ -293,11 +291,10 @@ if st.session_state['all_sheets'] is not None:
         teacher_schedule = []
         valid_classes_to_search = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
         
-        with st.spinner('正在全校精准抓取坐标数据...'):
+        with st.spinner('正在为您垂直下挖提取所有周次的数据，请稍候...'):
             for s_name in valid_classes_to_search:
                 s_df = st.session_state['all_sheets'][s_name]
                 
-                # 如果这个表的列数不够，直接跳过
                 if len(s_df.columns) <= max(p_idx, t_idx, end_idx):
                     continue
                     
@@ -306,22 +303,31 @@ if st.session_state['all_sheets'] is not None:
                 for col in locked_cols:
                     current_date = None
                     current_weekday = ""
-                    for row_idx in range(min(5, len(s_df))):
-                        val_str = str(s_df.iloc[row_idx, s_df.columns.get_loc(col)]).strip()
+                    col_index = s_df.columns.get_loc(col)
+                    
+                    # 【核心修复】：垂直向下逐行扫描，遇到新日期就实时更新
+                    for row_idx in range(len(s_df)):
+                        val_str = str(s_df.iloc[row_idx, col_index]).strip()
+                        
+                        # 1. 探测是否有新日期出现
                         m = re.search(r'(\d{4}[-/]\d{1,2}[-/]\d{1,2})', val_str)
                         if m:
                             try: current_date = pd.to_datetime(m.group(1)).date()
                             except: pass
-                        if "星期" in val_str:
-                            current_weekday = val_str
+                            current_weekday = "" # 重置星期
+                            if "星期" in val_str: current_weekday = val_str
+                            continue # 日期行本身不排课
                             
-                    if not current_date: continue
-                    
-                    for row_idx in range(len(s_df)):
-                        val_str = str(s_df.iloc[row_idx, s_df.columns.get_loc(col)]).strip()
+                        # 2. 探测独立的星期行
+                        if "星期" in val_str and len(val_str) <= 6:
+                            current_weekday = val_str
+                            continue
+                            
+                        # 如果还没碰到有效日期，直接跳过当前行
+                        if not current_date: continue
                         
+                        # 3. 匹配目标教师并提取
                         if target_teacher in val_str:
-                            # 绝对定位！指哪打哪！
                             period = str(s_df.iloc[row_idx, p_idx]).strip()
                             time_val = str(s_df.iloc[row_idx, t_idx]).strip()
                             
@@ -329,8 +335,8 @@ if st.session_state['all_sheets'] is not None:
                             if time_val.lower() in ['nan', 'none']: time_val = ''
                             time_val = re.sub(r'[-—~]+', '-', time_val)
                             
-                            # 原封不动保留名字！绝不擅自删除！
-                            course_name = val_str 
+                            # 【核心新增】：加上班级名称前缀并换行，比如：【高三1班】\n聂俊生高三正小
+                            course_name = f"【{s_name}】\n{val_str}" 
                             
                             teacher_schedule.append({
                                 '日期': current_date,
@@ -345,6 +351,7 @@ if st.session_state['all_sheets'] is not None:
             ts_df = pd.DataFrame(teacher_schedule)
             
             def format_date(row):
+                # 采用 YYYY-MM-DD 格式，天然保证列头按照时间先后顺序正确排序
                 d_str = row['日期'].strftime('%Y-%m-%d')
                 w_str = row['星期']
                 if not w_str:
@@ -353,6 +360,8 @@ if st.session_state['all_sheets'] is not None:
                 return f"{d_str}\n{w_str}"
                 
             ts_df['日期排版'] = ts_df.apply(format_date, axis=1)
+            
+            # 合并同一个时间同个老师在不同班的排课
             ts_df = ts_df.groupby(['节次/分类', '时间/参数', '排序辅助', '日期排版'])['课程内容'].apply(lambda x: '\n'.join(x.unique())).reset_index()
             
             grid_df = pd.pivot_table(
@@ -369,20 +378,20 @@ if st.session_state['all_sheets'] is not None:
             grid_df.index.names = ['节次', '时间/姓名'] 
             grid_df.columns.name = None
             
-            st.success(f"🎉 生成成功！所有内容原汁原味还原：")
+            st.success(f"🎉 生成成功！所有周次都给您提取出来了，并且标明了班级：")
             st.dataframe(grid_df, use_container_width=True)
             
-            formal_title = f"【{target_teacher}】专属网格课表"
+            formal_title = f"【{target_teacher}】全周期专属网格课表"
             excel_data = convert_df_to_excel_pro(grid_df, sheet_name="个人课表", title=formal_title)
             st.download_button(
-                label=f"⬇️ 下载《{target_teacher}网格课表》",
+                label=f"⬇️ 下载《{target_teacher}全周期网格课表》",
                 data=excel_data, file_name=f"{target_teacher}_专属课表.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         else:
             st.warning(f"😔 翻遍了全校数据，没有在 {st.session_state['t_start']} 到 {st.session_state['t_end']} 列找到包含【{target_teacher}】的排课信息！")
 
-    # 模式二：【全局汇总视图】
+    # 模式二：【全局汇总视图】 (略，与之前保持完全一致)
     elif st.session_state['global_mode']:
         g_dates = st.session_state['g_dates']
         f_start = g_dates[0]
@@ -439,7 +448,7 @@ if st.session_state['all_sheets'] is not None:
         else:
             st.warning("⚠️ 在指定的范围中，未抓取到有效课时！")
             
-    # 模式三：【单班级管理视图】
+    # 模式三：【单班级管理视图】 (略，与之前保持完全一致)
     else:
         current = st.session_state['current_sheet']
         st.markdown(f"<h4 style='color:#1e3c72;'>👁️ 当前查看 : 【 {current} 】</h4>", unsafe_allow_html=True)
