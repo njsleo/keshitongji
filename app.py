@@ -79,25 +79,33 @@ if 'search_teacher' not in st.session_state: st.session_state['search_teacher'] 
 def convert_df_to_excel_pro(df, sheet_name, title):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        export_df = df.reset_index() if df.index.name else df
-        export_df.to_excel(writer, sheet_name=sheet_name, startrow=2, index=False)
+        # 如果是带有索引的透视表（如课表），要保留索引
+        write_index = True if df.index.name or (isinstance(df.index, pd.MultiIndex)) else False
+        export_df = df
+        
+        # 写入 Excel，预留2行给大标题
+        export_df.to_excel(writer, sheet_name=sheet_name, startrow=2, index=write_index)
         worksheet = writer.sheets[sheet_name]
         
         thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
         header_fill = PatternFill(start_color="1E3C72", end_color="1E3C72", fill_type="solid")
         header_font = Font(color="FFFFFF", bold=True, size=11)
-        center_align = Alignment(horizontal='center', vertical='center')
+        center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
         
-        max_col = len(export_df.columns)
-        max_row = len(export_df) + 3 
+        # 计算最大列数（包括索引列）
+        num_index_cols = len(df.index.names) if write_index else 0
+        max_col = len(df.columns) + num_index_cols
+        max_row = len(df) + 3 
         
+        # 渲染大标题
         cell = worksheet.cell(row=1, column=1, value=title)
         cell.font = Font(size=18, bold=True, color="000000")
         worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max_col)
         cell.alignment = center_align
         worksheet.row_dimensions[1].height = 40 
         
-        worksheet.row_dimensions[3].height = 25
+        # 渲染表头
+        worksheet.row_dimensions[3].height = 30
         for col_idx in range(1, max_col + 1):
             c = worksheet.cell(row=3, column=col_idx)
             c.fill = header_fill
@@ -105,16 +113,21 @@ def convert_df_to_excel_pro(df, sheet_name, title):
             c.alignment = center_align
             c.border = thin_border
             
+        # 渲染数据和边框
         for r_idx in range(4, max_row + 1):
-            worksheet.row_dimensions[r_idx].height = 20 
+            worksheet.row_dimensions[r_idx].height = 25 
             for c_idx in range(1, max_col + 1):
                 c = worksheet.cell(row=r_idx, column=c_idx)
                 c.alignment = center_align
                 c.border = thin_border
-                if c_idx == 1: c.font = Font(bold=True)
+                if c_idx <= num_index_cols: c.font = Font(bold=True) # 索引列加粗
                     
+        # 调整列宽
         for i in range(1, max_col + 1):
-            worksheet.column_dimensions[get_column_letter(i)].width = 18
+            if i <= num_index_cols:
+                worksheet.column_dimensions[get_column_letter(i)].width = 12 # 节次时间列宽
+            else:
+                worksheet.column_dimensions[get_column_letter(i)].width = 18 # 课程列宽
 
     return output.getvalue()
 
@@ -161,7 +174,7 @@ def clean_excel_data(df):
 # ================= 核心统计算法库 =================
 def parse_class_string(val_str):
     val_str = str(val_str).replace(" ", "") 
-    ignore = ['0', '0.0', 'nan', 'none', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日', '体育', '班会', '国学', '美术', '音乐', '大扫除']
+    ignore = ['0', '0.0', 'nan', 'none', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日', '体育', '班会', '国学', '美术', '音乐', '大扫除', '休息']
     if not val_str or val_str.lower() in ignore or re.search(r'\d{4}[-/]\d{1,2}[-/]\d{1,2}', val_str) or re.search(r'^第[一二三四五六七八九十]+周', val_str):
         return None
         
@@ -277,19 +290,38 @@ if st.session_state['all_sheets'] is not None:
 
     # ================= 核心视图分支 =================
     
-    # 模式一：【教师个人二维网格课表】 (重大升级点)
+    # 模式一：【教师个人二维网格课表 (智能版)】 
     if st.session_state['teacher_mode']:
         target_teacher = st.session_state['search_teacher']
         st.markdown(f"<h3 style='color:#1e3c72;'>🧑‍🏫 【{target_teacher}】个人专属网格课表</h3>", unsafe_allow_html=True)
         
         teacher_schedule = []
-        default_start_idx = max(0, 15 - 1)
-        default_end_idx = 21
+        default_start_idx = max(0, 15 - 1) if 'g_start' not in st.session_state else st.session_state['g_start'] - 1
+        default_end_idx = 21 if 'g_end' not in st.session_state else st.session_state['g_end']
         valid_classes_to_search = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
         
-        with st.spinner('正在全校数据中穿梭，为您拼装课表...'):
+        with st.spinner('正在全校数据中穿梭，为您拼装原汁原味的课表...'):
             for s_name in valid_classes_to_search:
                 s_df = st.session_state['all_sheets'][s_name]
+                
+                # 【黑科技 1：智能识别你截图里的“节次”和“时间”列】
+                time_col = None
+                period_col = None
+                
+                # 在前10列里扫描，看看谁长得像时间（如 08:10-09:40）
+                for col in s_df.columns[:10]:
+                    if s_df[col].astype(str).str.contains(r'\d{2}:\d{2}', regex=True).any() or "时间" in s_df[col].astype(str).values:
+                        time_col = col
+                        col_idx = s_df.columns.get_loc(col)
+                        if col_idx > 0:
+                            period_col = s_df.columns[col_idx - 1] # 节次通常在时间的左边一列
+                        break
+                
+                # 兜底：如果实在没找到，就硬取前两列
+                if not time_col:
+                    time_col = s_df.columns[1] if len(s_df.columns) > 1 else s_df.columns[0]
+                    period_col = s_df.columns[0]
+                
                 end_i = min(len(s_df.columns), default_end_idx)
                 if default_start_idx >= end_i: continue
                     
@@ -297,62 +329,91 @@ if st.session_state['all_sheets'] is not None:
                 
                 for col in locked_cols:
                     current_date = None
-                    for row_idx, val in enumerate(s_df[col]):
-                        val_str = str(val).strip()
+                    current_weekday = ""
+                    # 先扫描这一列的顶端，找日期和星期
+                    for row_idx in range(min(5, len(s_df))):
+                        val_str = str(s_df.iloc[row_idx][col]).strip()
                         m = re.search(r'(\d{4}[-/]\d{1,2}[-/]\d{1,2})', val_str)
                         if m:
                             try: current_date = pd.to_datetime(m.group(1)).date()
                             except: pass
-                            continue
-                        
-                        if current_date and target_teacher in val_str:
-                            # 捕捉最左侧的“时间/节次”
-                            time_slot = "未标注时间"
-                            try:
-                                col0 = str(s_df.iloc[row_idx, 0]).strip()
-                                col1 = str(s_df.iloc[row_idx, 1]).strip()
-                                time_slot = col1 if col0 in ['nan', 'None', ''] else col0
-                                time_slot = time_slot.replace('nan', '未标注时间')
-                                # 格式化时间符号，让它更整齐
-                                time_slot = re.sub(r'[-—~]+', '-', time_slot)
-                            except: pass
+                        if "星期" in val_str:
+                            current_weekday = val_str
                             
+                    if not current_date: continue
+                    
+                    # 往下扫这一天的每一节课
+                    for row_idx in range(len(s_df)):
+                        val_str = str(s_df.iloc[row_idx][col]).strip()
+                        
+                        if target_teacher in val_str:
+                            # 提取时间、节次
+                            period = str(s_df.iloc[row_idx][period_col]).strip()
+                            time_val = str(s_df.iloc[row_idx][time_col]).strip()
+                            
+                            # 净化文字
+                            if period.lower() in ['nan', 'none']: period = ''
+                            if time_val.lower() in ['nan', 'none']: time_val = ''
+                            time_val = re.sub(r'[-—~]+', '-', time_val)
+                            
+                            # 净化课程名：如果是“张淑霞高三正小”，提炼为“高三正小”；如果只是班级名，补全
+                            parsed = parse_class_string(val_str)
+                            if parsed:
+                                course_name = parsed['课程类别']
+                                if not re.search(r'(高|初|小)[一二三]', course_name):
+                                    course_name = f"{s_name} {course_name}"
+                            else:
+                                course_name = val_str.replace(target_teacher, "")
+                                if not course_name: course_name = s_name
+                                
                             teacher_schedule.append({
                                 '日期': current_date,
-                                '节次/时间': time_slot,
-                                '原始排课数据': val_str # 直接用如“韩志然高二正小”
+                                '星期': current_weekday,
+                                '节次': period,
+                                '时间': time_val,
+                                '课程': course_name,
+                                '排序辅助': time_val if time_val else "99:99" # 确保没时间的排在下面
                             })
                             
         if teacher_schedule:
             ts_df = pd.DataFrame(teacher_schedule)
             
-            # 1. 整理列名为带星期的格式，例如 "2026/03/09\n(星期一)"
-            weekdays_map = {0: '一', 1: '二', 2: '三', 3: '四', 4: '五', 5: '六', 6: '日'}
-            ts_df['日期对象'] = pd.to_datetime(ts_df['日期'])
-            ts_df['日期排版'] = ts_df['日期对象'].apply(lambda x: f"{x.strftime('%Y/%m/%d')}\n(星期{weekdays_map[x.weekday()]})")
+            # 整理日期列的显示格式：2026-03-02 \n 星期一
+            def format_date(row):
+                d_str = row['日期'].strftime('%Y-%m-%d')
+                w_str = row['星期']
+                if not w_str:
+                    weekdays_map = {0: '一', 1: '二', 2: '三', 3: '四', 4: '五', 5: '六', 6: '日'}
+                    w_str = f"星期{weekdays_map[row['日期'].weekday()]}"
+                return f"{d_str}\n{w_str}"
+                
+            ts_df['日期排版'] = ts_df.apply(format_date, axis=1)
             
-            # 2. 核心黑科技：把流水账翻转成二维网格矩阵！
-            # 行是时间，列是日期，值是排课内容
+            # 如果同一个时间点这名老师在不同班都有名字（例如合班课），用换行拼合
+            ts_df = ts_df.groupby(['节次', '时间', '排序辅助', '日期排版'])['课程'].apply(lambda x: '\n'.join(x.unique())).reset_index()
+            
+            # 【黑科技 2：生成极其干净的二维网格，抛弃时长列】
             grid_df = pd.pivot_table(
-                ts_df, 
-                values='原始排课数据', 
-                index='节次/时间', 
-                columns='日期排版', 
+                ts_df,
+                values='课程',
+                index=['排序辅助', '节次', '时间'], 
+                columns='日期排版',
                 aggfunc=lambda x: '\n'.join(x.dropna().unique())
-            ).fillna('') # 空课用空白填充
+            ).fillna('')
             
-            # 时间排序
-            grid_df = grid_df.sort_index()
-
-            st.success(f"🎉 生成成功！这是【{target_teacher}】的专属周课表：")
+            # 根据时间排序后，抹掉丑陋的排序辅助列和多余的表头名字
+            grid_df = grid_df.sort_index(level='排序辅助')
+            grid_df = grid_df.reset_index(level='排序辅助', drop=True)
+            grid_df.index.names = ['节次', '时间'] # 强制改名
+            grid_df.columns.name = None
             
-            # 渲染出超美的网格课表
+            st.success(f"🎉 生成成功！这是【{target_teacher}】的专属二维网格课表：")
             st.dataframe(grid_df, use_container_width=True)
             
-            formal_title = f"【{target_teacher}】专属周课表"
+            formal_title = f"【{target_teacher}】专属网格课表"
             excel_data = convert_df_to_excel_pro(grid_df, sheet_name="个人课表", title=formal_title)
             st.download_button(
-                label=f"⬇️ 下载《{target_teacher}个人课表》为 Excel",
+                label=f"⬇️ 下载《{target_teacher}网格课表》为 Excel",
                 data=excel_data, file_name=f"{target_teacher}_专属课表.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
