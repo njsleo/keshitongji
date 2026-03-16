@@ -10,125 +10,82 @@ st.set_page_config(page_title="教师课时管理系统", page_icon="🎓", layo
 
 st.markdown("""
 <style>
-    /* 1. 隐藏 Streamlit 默认的顶部装饰线和菜单栏背景，为全屏横幅让路 */
-    [data-testid="stHeader"] {
-        background-color: transparent !important;
-    }
-    
-    /* 2. 页面全局高级渐变背景 (柔和的灰蓝色调，护眼且具科技感) */
+    [data-testid="stHeader"] { background-color: transparent !important; }
     .stApp {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
-
-    /* 3. 极致压缩顶部空间，让内容真正顶到头上 */
     [data-testid="block-container"] {
-        padding-top: 0rem !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        max-width: 98% !important;
+        padding-top: 0rem !important; padding-left: 2rem !important;
+        padding-right: 2rem !important; max-width: 98% !important;
     }
-
-    /* 4. 全新设计的沉浸式顶部 Banner (横幅) */
     .custom-header {
         background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 0 0 15px 15px; /* 下方圆角 */
-        text-align: center;
-        box-shadow: 0 6px 20px rgba(30, 60, 114, 0.2);
-        margin-bottom: 25px;
-        margin-top: -15px; /* 强行向上抵消默认留白 */
-        font-size: 28px;
-        font-weight: 900;
-        letter-spacing: 2px;
+        color: white; padding: 1.5rem; border-radius: 0 0 15px 15px; 
+        text-align: center; box-shadow: 0 6px 20px rgba(30, 60, 114, 0.2);
+        margin-bottom: 25px; margin-top: -15px; 
+        font-size: 28px; font-weight: 900; letter-spacing: 2px;
     }
-
-    /* 5. 侧边栏高级质感 (加入微透明和阴影) */
     [data-testid="stSidebar"] {
         background-color: rgba(255, 255, 255, 0.9) !important;
         border-right: 1px solid rgba(255,255,255,0.5);
         box-shadow: 2px 0 15px rgba(0,0,0,0.05);
     }
-    
-    /* 6. 导航按钮组美化 (纯白质感，悬浮变色) */
     div.stButton > button {
-        white-space: nowrap !important; 
-        font-size: 13px !important;     
-        padding: 4px 12px !important;    
-        min-height: 32px !important; 
-        height: 32px !important;
-        width: 100% !important;         
+        white-space: nowrap !important; font-size: 13px !important;     
+        padding: 4px 12px !important; min-height: 32px !important; 
+        height: 32px !important; width: 100% !important;         
         background-color: rgba(255, 255, 255, 0.95) !important;      
-        color: #334155 !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 20px !important; /* 优雅的胶囊圆角 */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
-        transition: all 0.3s ease !important; /* 平滑动画 */
+        color: #334155 !important; border: 1px solid #cbd5e1 !important;
+        border-radius: 20px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        transition: all 0.3s ease !important; 
     }
     div.stButton > button:hover {
         background: linear-gradient(90deg, #2a5298 0%, #1e3c72 100%) !important;
-        color: white !important;
-        border-color: #1e3c72 !important;
-        transform: translateY(-2px); /* 悬浮上浮效果 */
-        box-shadow: 0 6px 12px rgba(42, 82, 152, 0.25) !important;
+        color: white !important; border-color: #1e3c72 !important;
+        transform: translateY(-2px); box-shadow: 0 6px 12px rgba(42, 82, 152, 0.25) !important;
     }
-    
-    /* 7. 下载按钮专属尊贵渐变色 (橙金色) */
     div[data-testid="stDownloadButton"] > button {
         background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
-        color: white !important;
-        border: none !important;
-        letter-spacing: 1px;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 15px rgba(253, 160, 133, 0.4) !important;
+        color: white !important; border: none !important; letter-spacing: 1px;
+        border-radius: 8px !important; box-shadow: 0 4px 15px rgba(253, 160, 133, 0.4) !important;
         font-size: 14px !important;
     }
     div[data-testid="stDownloadButton"] > button:hover {
         background: linear-gradient(135deg, #fda085 0%, #f6d365 100%) !important;
         transform: scale(1.02);
     }
-
-    /* 8. 行标题排版对齐 */
     .row-title {
-        font-size: 14px;
-        font-weight: bold;
-        color: #1e293b;
-        text-align: right;               
-        padding-top: 6px;
-        padding-right: 12px;
-        white-space: nowrap;
+        font-size: 14px; font-weight: bold; color: #1e293b;
+        text-align: right; padding-top: 6px; padding-right: 12px; white-space: nowrap;
     }
-    
-    /* 9. 表格卡片化背景 */
     [data-testid="stDataFrame"] {
-        background: white;
-        padding: 10px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        border: 1px solid #f1f5f9;
+        background: white; padding: 10px; border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;
     }
     [data-testid="column"] { padding: 0 5px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# 使用定制的 HTML 横幅替代原本的 st.title
 st.markdown('<div class="custom-header">🎓 教师排课智能读取与精准统计系统</div>', unsafe_allow_html=True)
 
+# 状态初始化（新增 teacher_mode 用于控制教师专属课表界面）
 if 'all_sheets' not in st.session_state: st.session_state['all_sheets'] = None
 if 'current_sheet' not in st.session_state: st.session_state['current_sheet'] = None
 if 'global_mode' not in st.session_state: st.session_state['global_mode'] = False
+if 'teacher_mode' not in st.session_state: st.session_state['teacher_mode'] = False
+if 'search_teacher' not in st.session_state: st.session_state['search_teacher'] = ""
 
 # ================= 汇报级 Excel 渲染引擎 =================
 def convert_df_to_excel_pro(df, sheet_name, title):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        export_df = df.reset_index()
+        export_df = df.reset_index() if df.index.name else df
         export_df.to_excel(writer, sheet_name=sheet_name, startrow=2, index=False)
         worksheet = writer.sheets[sheet_name]
         
         thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-        header_fill = PatternFill(start_color="1E3C72", end_color="1E3C72", fill_type="solid") # 换成更高级的深蓝表头
+        header_fill = PatternFill(start_color="1E3C72", end_color="1E3C72", fill_type="solid")
         header_font = Font(color="FFFFFF", bold=True, size=11)
         center_align = Alignment(horizontal='center', vertical='center')
         
@@ -158,7 +115,7 @@ def convert_df_to_excel_pro(df, sheet_name, title):
                 if c_idx == 1: c.font = Font(bold=True)
                     
         for i in range(1, max_col + 1):
-            worksheet.column_dimensions[get_column_letter(i)].width = 15 
+            worksheet.column_dimensions[get_column_letter(i)].width = 16
 
     return output.getvalue()
 
@@ -226,7 +183,7 @@ def parse_class_string(val_str):
     if len(val_str) >= 2: return {'教师姓名': val_str, '课程类别': '常规课', '课时数': count}
     return None
 
-# ================= 侧边栏与全局汇总配置 =================
+# ================= 侧边栏与核心控制台 =================
 st.sidebar.markdown('<div style="text-align:center; padding-bottom:10px;"><h2 style="color:#1e3c72; font-weight:bold;">📁 数据控制台</h2></div>', unsafe_allow_html=True)
 uploaded_file = st.sidebar.file_uploader("请拖拽或点击上传 Excel (.xlsm/xlsx)", type=["xlsm", "xlsx"])
 
@@ -243,15 +200,28 @@ if uploaded_file is not None and st.session_state['all_sheets'] is None:
         st.error(f"严重错误: {e}")
 
 if st.session_state['all_sheets'] is not None:
+    valid_classes = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
+    
+    # 【新增功能区：教师专属课表查询】
+    st.sidebar.markdown("---")
+    st.sidebar.markdown('<h4 style="color:#2a5298;">🧑‍🏫 教师专属课表查询</h4>', unsafe_allow_html=True)
+    search_input = st.sidebar.text_input("🔍 输入教师姓名：", placeholder="例如：张淑霞")
+    if st.sidebar.button("🔎 一键生成个人课表", use_container_width=True):
+        if search_input.strip() == "":
+            st.sidebar.warning("请先输入教师姓名！")
+        else:
+            st.session_state['teacher_mode'] = True
+            st.session_state['global_mode'] = False
+            st.session_state['search_teacher'] = search_input.strip()
+
+    # 【全局统计生成器】
     st.sidebar.markdown("---")
     st.sidebar.markdown('<h4 style="color:#2a5298;">🌐 全局统计生成器</h4>', unsafe_allow_html=True)
     
-    valid_classes = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
     scope = st.sidebar.radio("📌 统计范围选择", ["所有班级 (全校)", "按年级多选", "自定义勾选班级"])
     
     target_classes = []
-    if scope == "所有班级 (全校)":
-        target_classes = valid_classes
+    if scope == "所有班级 (全校)": target_classes = valid_classes
     elif scope == "按年级多选":
         grades = st.sidebar.multiselect("挑选年级", ["高一", "高二", "高三", "一对一"], default=["高三"])
         target_classes = [c for c in valid_classes if any(g in c for g in grades)]
@@ -262,16 +232,14 @@ if st.session_state['all_sheets'] is not None:
     col_g1, col_g2 = st.sidebar.columns(2)
     with col_g1: g_start_idx = st.number_input("起始列数", min_value=1, value=15)
     with col_g2: g_end_idx = st.number_input("结束列数", min_value=1, value=21)
-    
     g_dates = st.sidebar.date_input("🗓️ 限定统计时间段", [])
     
     if st.sidebar.button("🚀 一键生成全局报表", use_container_width=True, type="primary"):
-        if len(g_dates) < 1:
-            st.sidebar.error("请先选择完整的时间段！")
-        elif not target_classes:
-            st.sidebar.error("当前没有选定任何班级！")
+        if len(g_dates) < 1: st.sidebar.error("请先选择完整的时间段！")
+        elif not target_classes: st.sidebar.error("当前没有选定任何班级！")
         else:
             st.session_state['global_mode'] = True
+            st.session_state['teacher_mode'] = False
             st.session_state['g_start'] = g_start_idx
             st.session_state['g_end'] = g_end_idx
             st.session_state['g_dates'] = g_dates
@@ -293,6 +261,7 @@ if st.session_state['all_sheets'] is not None:
         elif "一对一" in name: directory_data["一对一"].append(name)
         else: directory_data["其他表单"].append(name)
 
+    st.write("")
     for category, buttons in directory_data.items():
         if not buttons: continue 
         empty_space = 10 - len(buttons) if len(buttons) < 10 else 1
@@ -303,20 +272,96 @@ if st.session_state['all_sheets'] is not None:
             with cols[i+1]:
                 if st.button(btn_name, key=f"nav_{btn_name}"):
                     st.session_state['current_sheet'] = btn_name
+                    # 只要点击了上方导航栏的班级，就退出“全局统计”和“教师课表”模式
                     st.session_state['global_mode'] = False 
-    st.markdown("<hr style='margin: 15px 0px; border: none; border-top: 1px solid #cbd5e1;'>", unsafe_allow_html=True)
+                    st.session_state['teacher_mode'] = False
+    st.markdown("<hr style='margin: 15px 0px; border: none; border-top: 1px dashed #cbd5e1;'>", unsafe_allow_html=True)
 
-    # ================= 分支判断：全局表 or 单班级表 =================
-    if st.session_state['global_mode']:
+    # ================= 核心视图分支 =================
+    
+    # 模式一：【教师个人专属课表查询视图】
+    if st.session_state['teacher_mode']:
+        target_teacher = st.session_state['search_teacher']
+        st.markdown(f"<h3 style='color:#1e3c72;'>🧑‍🏫 【{target_teacher}】的全校专属课表</h3>", unsafe_allow_html=True)
+        st.info("系统已自动穿透全校所有班级排课表，为您提取出该教师的全部排课记录。")
+        
+        teacher_schedule = []
+        # 使用默认的排课列范围 (15-21列) 去各大班级表格中捞数据
+        default_start_idx = max(0, 15 - 1)
+        default_end_idx = 21
+        
+        valid_classes_to_search = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
+        
+        for s_name in valid_classes_to_search:
+            s_df = st.session_state['all_sheets'][s_name]
+            end_i = min(len(s_df.columns), default_end_idx)
+            if default_start_idx >= end_i: continue
+                
+            locked_cols = s_df.columns[default_start_idx:end_i]
+            
+            for col in locked_cols:
+                current_date = None
+                for row_idx, val in enumerate(s_df[col]):
+                    val_str = str(val).strip()
+                    m = re.search(r'(\d{4}[-/]\d{1,2}[-/]\d{1,2})', val_str)
+                    if m:
+                        try: current_date = pd.to_datetime(m.group(1)).date()
+                        except: pass
+                        continue
+                    
+                    if current_date and target_teacher in val_str:
+                        # 尝试拆词确认
+                        parsed = parse_class_string(val_str)
+                        c_type = parsed['课程类别'] if parsed else "常规排课"
+                        count = parsed['课时数'] if parsed else 1.0
+                        
+                        # 黑科技：尝试捕捉左侧的“时间/节次”
+                        time_slot = "未标注"
+                        try:
+                            # 尝试取同一行第1列或第2列的内容作为时间段
+                            col0 = str(s_df.iloc[row_idx, 0]).strip()
+                            col1 = str(s_df.iloc[row_idx, 1]).strip()
+                            time_slot = col1 if col0 in ['nan', 'None', ''] else col0
+                            time_slot = time_slot.replace('nan', '未标注')
+                        except: pass
+                        
+                        teacher_schedule.append({
+                            '日期': current_date,
+                            '班级': s_name,
+                            '节次/时间': time_slot,
+                            '课程内容': c_type,
+                            '计件数': count,
+                            '原始排课数据': val_str
+                        })
+                        
+        if teacher_schedule:
+            # 转化为 DataFrame 并按照日期排序，生成极度清晰的课表
+            ts_df = pd.DataFrame(teacher_schedule)
+            ts_df = ts_df.sort_values(by=['日期', '班级'])
+            
+            st.success(f"🎉 找齐了！共为您搜罗到 {len(ts_df)} 节排课记录。")
+            st.dataframe(ts_df, use_container_width=True)
+            
+            formal_title = f"【{target_teacher}】个人专属课表"
+            excel_data = convert_df_to_excel_pro(ts_df, sheet_name="个人课表", title=formal_title)
+            st.download_button(
+                label=f"⬇️ 导出《{target_teacher}专属课表》",
+                data=excel_data, file_name=f"{target_teacher}_专属课表.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        else:
+            st.warning(f"😔 翻遍了所有班级的表格，都没有找到包含【{target_teacher}】的排课信息哦。请检查名字是否输入正确！")
+
+    # 模式二：【全局汇总视图】
+    elif st.session_state['global_mode']:
         g_dates = st.session_state['g_dates']
         f_start = g_dates[0]
         f_end = g_dates[1] if len(g_dates) == 2 else g_dates[0]
         targets = st.session_state['g_targets']
         
         report_title_prefix = "全校" if st.session_state['g_scope'] == "所有班级 (全校)" else "选中班级"
-        
         st.markdown(f"<h3 style='color:#1e3c72;'>🌐 【{report_title_prefix}】课时总汇 📅 ({f_start} 至 {f_end})</h3>", unsafe_allow_html=True)
-        st.info(f"系统正在扫描以下 {len(targets)} 个班级：{', '.join(targets[:5])}{' ...' if len(targets)>5 else ''}")
+        st.info(f"正在扫描以下 {len(targets)} 个班级：{', '.join(targets[:5])}{' ...' if len(targets)>5 else ''}")
         
         all_records = []
         for s_name in targets:
@@ -364,6 +409,7 @@ if st.session_state['all_sheets'] is not None:
         else:
             st.warning("⚠️ 在指定的范围中，未抓取到有效课时！")
             
+    # 模式三：【单班级管理视图】
     else:
         current = st.session_state['current_sheet']
         st.markdown(f"<h4 style='color:#1e3c72;'>👁️ 当前查看 : 【 {current} 】</h4>", unsafe_allow_html=True)
@@ -427,7 +473,7 @@ if st.session_state['all_sheets'] is not None:
                                 formal_title = f"【{current}】课时统计报表 ({f_start}至{f_end})"
                                 excel_data = convert_df_to_excel_pro(pivot_df, sheet_name=current, title=formal_title)
                                 st.download_button(
-                                    label=f"⬇️ 导出带商务排版的《{current}报表》",
+                                    label=f"⬇️ 导出带高级排版的《{current}报表》",
                                     data=excel_data, file_name=f"{current}_课时报表_{f_start}至{f_end}.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 )
