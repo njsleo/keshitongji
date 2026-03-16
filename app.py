@@ -11,58 +11,31 @@ st.set_page_config(page_title="教师课时管理系统", page_icon="🎓", layo
 st.markdown("""
 <style>
     [data-testid="stHeader"] { background-color: transparent !important; }
-    .stApp {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
-    [data-testid="block-container"] {
-        padding-top: 0rem !important; padding-left: 2rem !important;
-        padding-right: 2rem !important; max-width: 98% !important;
-    }
+    .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    [data-testid="block-container"] { padding-top: 0rem !important; padding-left: 2rem !important; padding-right: 2rem !important; max-width: 98% !important; }
     .custom-header {
-        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
-        color: white; padding: 1.5rem; border-radius: 0 0 15px 15px; 
-        text-align: center; box-shadow: 0 6px 20px rgba(30, 60, 114, 0.2);
-        margin-bottom: 25px; margin-top: -15px; 
+        background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 1.5rem; border-radius: 0 0 15px 15px; 
+        text-align: center; box-shadow: 0 6px 20px rgba(30, 60, 114, 0.2); margin-bottom: 25px; margin-top: -15px; 
         font-size: 28px; font-weight: 900; letter-spacing: 2px;
     }
-    [data-testid="stSidebar"] {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        border-right: 1px solid rgba(255,255,255,0.5);
-        box-shadow: 2px 0 15px rgba(0,0,0,0.05);
-    }
+    [data-testid="stSidebar"] { background-color: rgba(255, 255, 255, 0.9) !important; border-right: 1px solid rgba(255,255,255,0.5); box-shadow: 2px 0 15px rgba(0,0,0,0.05); }
     div.stButton > button {
-        white-space: nowrap !important; font-size: 13px !important;     
-        padding: 4px 12px !important; min-height: 32px !important; 
-        height: 32px !important; width: 100% !important;         
-        background-color: rgba(255, 255, 255, 0.95) !important;      
-        color: #334155 !important; border: 1px solid #cbd5e1 !important;
-        border-radius: 20px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+        white-space: nowrap !important; font-size: 13px !important; padding: 4px 12px !important; min-height: 32px !important; 
+        height: 32px !important; width: 100% !important; background-color: rgba(255, 255, 255, 0.95) !important;      
+        color: #334155 !important; border: 1px solid #cbd5e1 !important; border-radius: 20px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
         transition: all 0.3s ease !important; 
     }
     div.stButton > button:hover {
-        background: linear-gradient(90deg, #2a5298 0%, #1e3c72 100%) !important;
-        color: white !important; border-color: #1e3c72 !important;
+        background: linear-gradient(90deg, #2a5298 0%, #1e3c72 100%) !important; color: white !important; border-color: #1e3c72 !important;
         transform: translateY(-2px); box-shadow: 0 6px 12px rgba(42, 82, 152, 0.25) !important;
     }
     div[data-testid="stDownloadButton"] > button {
-        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
-        color: white !important; border: none !important; letter-spacing: 1px;
-        border-radius: 8px !important; box-shadow: 0 4px 15px rgba(253, 160, 133, 0.4) !important;
-        font-size: 14px !important;
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important; color: white !important; border: none !important; letter-spacing: 1px;
+        border-radius: 8px !important; box-shadow: 0 4px 15px rgba(253, 160, 133, 0.4) !important; font-size: 14px !important;
     }
-    div[data-testid="stDownloadButton"] > button:hover {
-        background: linear-gradient(135deg, #fda085 0%, #f6d365 100%) !important;
-        transform: scale(1.02);
-    }
-    .row-title {
-        font-size: 14px; font-weight: bold; color: #1e293b;
-        text-align: right; padding-top: 6px; padding-right: 12px; white-space: nowrap;
-    }
-    [data-testid="stDataFrame"] {
-        background: white; padding: 10px; border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9;
-    }
+    div[data-testid="stDownloadButton"] > button:hover { background: linear-gradient(135deg, #fda085 0%, #f6d365 100%) !important; transform: scale(1.02); }
+    .row-title { font-size: 14px; font-weight: bold; color: #1e293b; text-align: right; padding-top: 6px; padding-right: 12px; white-space: nowrap; }
+    [data-testid="stDataFrame"] { background: white; padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
     [data-testid="column"] { padding: 0 5px !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -75,27 +48,22 @@ if 'global_mode' not in st.session_state: st.session_state['global_mode'] = Fals
 if 'teacher_mode' not in st.session_state: st.session_state['teacher_mode'] = False
 if 'search_teacher' not in st.session_state: st.session_state['search_teacher'] = ""
 
-# ================= 辅助函数：严格验证是否为需要查询的班级排课表 =================
-def is_valid_class_sheet(sheet_name):
-    # 如果名字里有这些词，绝对不进去搜刮（防止抓到“科目/姓名”这种乱七八糟的列）
-    junk_words = ['总表', '分表', '汇总', '明细', '档案', '目录', 'Sheet', '统计', '数据']
-    if any(kw in sheet_name for kw in junk_words):
-        return False
-    # 只要名字里带“班”或者“高”，就认为是正经课表
-    if "班" in sheet_name or "高" in sheet_name:
-        return True
-    return False
+# ================= 辅助函数 =================
+def col2num(col_str):
+    """将 Excel 字母 (如 V, Y, AE) 转换为 Python 索引 (0, 1, 2)"""
+    expn = 0; col_num = 0
+    for char in reversed(col_str.upper().strip()):
+        col_num += (ord(char) - ord('A') + 1) * (26 ** expn)
+        expn += 1
+    return col_num - 1
 
-# ================= 汇报级 Excel 渲染引擎 =================
 def convert_df_to_excel_pro(df, sheet_name, title):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # 重置索引，让节次和时间变成普通列，方便统一写出和加边框
-        is_multi = df.index.name or isinstance(df.index, pd.MultiIndex)
-        export_df = df.reset_index() if is_multi else df
-        num_index_cols = len(df.index.names) if is_multi else 0
+        write_index = True if df.index.name or (isinstance(df.index, pd.MultiIndex)) else False
+        export_df = df
         
-        export_df.to_excel(writer, sheet_name=sheet_name, startrow=2, index=False)
+        export_df.to_excel(writer, sheet_name=sheet_name, startrow=2, index=write_index)
         worksheet = writer.sheets[sheet_name]
         
         thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
@@ -103,8 +71,9 @@ def convert_df_to_excel_pro(df, sheet_name, title):
         header_font = Font(color="FFFFFF", bold=True, size=11)
         center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
         
-        max_col = len(export_df.columns)
-        max_row = len(export_df) + 3 
+        num_index_cols = len(df.index.names) if write_index else 0
+        max_col = len(df.columns) + num_index_cols
+        max_row = len(df) + 3 
         
         cell = worksheet.cell(row=1, column=1, value=title)
         cell.font = Font(size=18, bold=True, color="000000")
@@ -126,11 +95,10 @@ def convert_df_to_excel_pro(df, sheet_name, title):
                 c = worksheet.cell(row=r_idx, column=c_idx)
                 c.alignment = center_align
                 c.border = thin_border
-                # 给左侧的节次和时间加粗
                 if c_idx <= num_index_cols: c.font = Font(bold=True) 
                     
         for i in range(1, max_col + 1):
-            if i <= num_index_cols: worksheet.column_dimensions[get_column_letter(i)].width = 15 
+            if i <= num_index_cols: worksheet.column_dimensions[get_column_letter(i)].width = 14 
             else: worksheet.column_dimensions[get_column_letter(i)].width = 20 
 
     return output.getvalue()
@@ -144,16 +112,21 @@ def clean_excel_data(df):
             is_schedule = True; break
             
     if is_schedule:
+        # 为了保证 Excel 字母与列索引绝对一致，排课表【绝对不删除任何空列】
         new_cols = []
         for idx, col in enumerate(df.columns):
+            letter = get_column_letter(idx + 1)
             c = str(col).strip()
-            if pd.isna(col) or c.lower() in ['nan', '', 'unnamed'] or 'unnamed' in c.lower(): c = f"未命名_{idx+1}"
-            base = c
-            counter = 1
+            if pd.isna(col) or c.lower() in ['nan', '', 'unnamed'] or 'unnamed' in c.lower():
+                c = letter # 直接用字母命名，如 "Y"
+            else:
+                c = f"{letter}_{c}"
+            
+            base = c; counter = 1
             while c in new_cols: c = f"{base}_{counter}"; counter += 1
             new_cols.append(c)
         df.columns = new_cols
-        return df.dropna(how='all', axis=1).dropna(how='all', axis=0)
+        return df.dropna(how='all', axis=0) # 仅删空行，保留所有列
     else:
         header_idx = -1
         for i in range(min(10, len(df))):
@@ -164,15 +137,17 @@ def clean_excel_data(df):
             df = df.iloc[header_idx + 1:].reset_index(drop=True)
         else:
             raw_cols = df.columns.tolist() 
-            new_cols = []
-            for idx, col in enumerate(raw_cols):
-                c = str(col).strip()
-                if pd.isna(col) or c.lower() in ['nan', '', 'unnamed'] or 'unnamed' in c.lower(): c = f"未命名_{idx+1}"
-                base = c
-                counter = 1
-                while c in new_cols: c = f"{base}_{counter}"; counter += 1
-                new_cols.append(c)
-            df.columns = new_cols
+            
+        new_cols = []
+        for idx, col in enumerate(raw_cols):
+            letter = get_column_letter(idx + 1)
+            c = str(col).strip()
+            if pd.isna(col) or c.lower() in ['nan', '', 'unnamed'] or 'unnamed' in c.lower(): c = letter
+            else: c = f"{letter}_{c}"
+            base = c; counter = 1
+            while c in new_cols: c = f"{base}_{counter}"; counter += 1
+            new_cols.append(c)
+        df.columns = new_cols
         return df.dropna(how='all', axis=1).dropna(how='all', axis=0)
 
 # ================= 核心统计算法库 =================
@@ -205,36 +180,47 @@ uploaded_file = st.sidebar.file_uploader("请拖拽或点击上传 Excel (.xlsm/
 
 if uploaded_file is not None and st.session_state['all_sheets'] is None:
     try:
-        with st.spinner('正在执行双引擎解析，请稍候...'):
+        with st.spinner('正在执行精准坐标解析，请稍候...'):
             raw_sheets = pd.read_excel(uploaded_file, sheet_name=None, engine='openpyxl')
             clean_sheets = {}
             for sheet_name, df in raw_sheets.items(): clean_sheets[sheet_name] = clean_excel_data(df)
             st.session_state['all_sheets'] = clean_sheets
             st.session_state['current_sheet'] = list(clean_sheets.keys())[0]
-            st.sidebar.success("✅ 文件解析成功！")
+            st.sidebar.success("✅ 文件解析成功！已启用 Excel 原生字母坐标！")
     except Exception as e:
         st.error(f"严重错误: {e}")
 
 if st.session_state['all_sheets'] is not None:
-    # 全局过滤：提取真正的班级排课表
-    valid_classes = [s for s in st.session_state['all_sheets'].keys() if is_valid_class_sheet(s)]
+    valid_classes = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
     
     # 【教师专属课表查询】
     st.sidebar.markdown("---")
     st.sidebar.markdown('<h4 style="color:#2a5298;">🧑‍🏫 个人课表生成器</h4>', unsafe_allow_html=True)
-    search_input = st.sidebar.text_input("🔍 输入教师姓名：", placeholder="例如：张淑霞")
+    search_input = st.sidebar.text_input("🔍 输入教师姓名：", placeholder="例如：韩志然")
+    
+    # 增加专属精准定位输入框
+    with st.sidebar.expander("⚙️ 课表坐标设置 (默认 V, W, Y-AE)"):
+        col_t1, col_t2 = st.columns(2)
+        with col_t1: t_period = st.text_input("【节次】列", value="V")
+        with col_t2: t_time = st.text_input("【时间】列", value="W")
+        col_t3, col_t4 = st.columns(2)
+        with col_t3: t_start = st.text_input("【课表起】", value="Y")
+        with col_t4: t_end = st.text_input("【课表止】", value="AE")
+
     if st.sidebar.button("🔎 一键生成网格课表", use_container_width=True):
-        if search_input.strip() == "":
-            st.sidebar.warning("请先输入教师姓名！")
+        if search_input.strip() == "": st.sidebar.warning("请先输入教师姓名！")
         else:
             st.session_state['teacher_mode'] = True
             st.session_state['global_mode'] = False
             st.session_state['search_teacher'] = search_input.strip()
+            st.session_state['t_period'] = t_period
+            st.session_state['t_time'] = t_time
+            st.session_state['t_start'] = t_start
+            st.session_state['t_end'] = t_end
 
     # 【全局统计生成器】
     st.sidebar.markdown("---")
     st.sidebar.markdown('<h4 style="color:#2a5298;">🌐 批量课时统计</h4>', unsafe_allow_html=True)
-    
     scope = st.sidebar.radio("📌 统计范围选择", ["所有班级 (全校)", "按年级多选", "自定义勾选班级"])
     
     target_classes = []
@@ -243,12 +229,12 @@ if st.session_state['all_sheets'] is not None:
         grades = st.sidebar.multiselect("挑选年级", ["高一", "高二", "高三"], default=["高三"])
         target_classes = [c for c in valid_classes if any(g in c for g in grades)]
     else:
-        target_classes = st.sidebar.multiselect("勾选具体的班级", valid_classes, default=valid_classes[:2] if valid_classes else [])
+        target_classes = st.sidebar.multiselect("勾选具体的班级", valid_classes, default=valid_classes[:2])
 
-    st.sidebar.markdown("<br><b>📍 数据截取设置</b>", unsafe_allow_html=True)
+    st.sidebar.markdown("<br><b>📍 课表区域坐标 (输入字母)</b>", unsafe_allow_html=True)
     col_g1, col_g2 = st.sidebar.columns(2)
-    with col_g1: g_start_idx = st.number_input("起始列数", min_value=1, value=15)
-    with col_g2: g_end_idx = st.number_input("结束列数", min_value=1, value=21)
+    with col_g1: g_start_letter = st.text_input("起始列 (如 Y)", value="Y")
+    with col_g2: g_end_letter = st.text_input("结束列 (如 AE)", value="AE")
     g_dates = st.sidebar.date_input("🗓️ 限定统计时间段", [])
     
     if st.sidebar.button("🚀 一键生成全局报表", use_container_width=True, type="primary"):
@@ -257,8 +243,8 @@ if st.session_state['all_sheets'] is not None:
         else:
             st.session_state['global_mode'] = True
             st.session_state['teacher_mode'] = False
-            st.session_state['g_start'] = g_start_idx
-            st.session_state['g_end'] = g_end_idx
+            st.session_state['g_start'] = g_start_letter
+            st.session_state['g_end'] = g_end_letter
             st.session_state['g_dates'] = g_dates
             st.session_state['g_targets'] = target_classes
             st.session_state['g_scope'] = scope
@@ -282,8 +268,7 @@ if st.session_state['all_sheets'] is not None:
         if not buttons: continue 
         empty_space = 10 - len(buttons) if len(buttons) < 10 else 1
         cols = st.columns([1.2] + [1] * len(buttons) + [empty_space]) 
-        with cols[0]:
-            st.markdown(f'<div class="row-title">{category} :</div>', unsafe_allow_html=True)
+        with cols[0]: st.markdown(f'<div class="row-title">{category} :</div>', unsafe_allow_html=True)
         for i, btn_name in enumerate(buttons):
             with cols[i+1]:
                 if st.button(btn_name, key=f"nav_{btn_name}"):
@@ -294,89 +279,66 @@ if st.session_state['all_sheets'] is not None:
 
     # ================= 核心视图分支 =================
     
-    # 模式一：【完美修复版 - 教师个人二维网格课表】 
+    # 模式一：【教师个人二维网格课表 (绝对坐标还原版)】 
     if st.session_state['teacher_mode']:
         target_teacher = st.session_state['search_teacher']
         st.markdown(f"<h3 style='color:#1e3c72;'>🧑‍🏫 【{target_teacher}】个人专属网格课表</h3>", unsafe_allow_html=True)
         
+        # 将字母转换为绝对索引
+        p_idx = col2num(st.session_state['t_period'])
+        t_idx = col2num(st.session_state['t_time'])
+        start_idx = col2num(st.session_state['t_start'])
+        end_idx = col2num(st.session_state['t_end'])
+        
         teacher_schedule = []
-        default_start_idx = max(0, 15 - 1) if 'g_start' not in st.session_state else st.session_state['g_start'] - 1
-        default_end_idx = 21 if 'g_end' not in st.session_state else st.session_state['g_end']
+        valid_classes_to_search = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
         
-        # 核心防干扰：只搜索真正的排课表！
-        valid_classes_to_search = [s for s in st.session_state['all_sheets'].keys() if is_valid_class_sheet(s)]
-        
-        with st.spinner('正在全校数据中穿梭，为您拼装原汁原味的课表...'):
+        with st.spinner('正在全校精准抓取坐标数据...'):
             for s_name in valid_classes_to_search:
                 s_df = st.session_state['all_sheets'][s_name]
                 
-                # 【AI 智能找列】：精准找出“时间”和“节次”到底在第几列
-                time_col = None
-                period_col = None
-                
-                # 策略 1：扫描前5列的表头和前15行，看有没有“时间”两字
-                for col in s_df.columns[:5]:
-                    if "时间" in str(col) or s_df[col].head(15).astype(str).str.contains("时间").any():
-                        time_col = col
-                        col_idx = s_df.columns.get_loc(col)
-                        period_col = s_df.columns[col_idx - 1] if col_idx > 0 else col
-                        break
-                
-                # 策略 2：如果没写“时间”，看哪一列有类似 08:10 的时间格式
-                if not time_col:
-                    for col in s_df.columns[:5]:
-                        if s_df[col].head(15).astype(str).str.contains(r'\d{1,2}:\d{2}').any():
-                            time_col = col
-                            col_idx = s_df.columns.get_loc(col)
-                            period_col = s_df.columns[col_idx - 1] if col_idx > 0 else col
-                            break
-                            
-                # 策略 3：如果依然没找到，就硬取前两列保底
-                if not time_col:
-                    time_col = s_df.columns[1] if len(s_df.columns) > 1 else s_df.columns[0]
-                    period_col = s_df.columns[0]
-                
-                end_i = min(len(s_df.columns), default_end_idx)
-                if default_start_idx >= end_i: continue
+                # 如果这个表的列数不够，直接跳过
+                if len(s_df.columns) <= max(p_idx, t_idx, end_idx):
+                    continue
                     
-                locked_cols = s_df.columns[default_start_idx:end_i]
+                locked_cols = s_df.columns[start_idx : end_idx + 1]
                 
                 for col in locked_cols:
                     current_date = None
                     current_weekday = ""
-                    # 确定这列的日期
                     for row_idx in range(min(5, len(s_df))):
-                        val_str = str(s_df.iloc[row_idx][col]).strip()
+                        val_str = str(s_df.iloc[row_idx, s_df.columns.get_loc(col)]).strip()
                         m = re.search(r'(\d{4}[-/]\d{1,2}[-/]\d{1,2})', val_str)
                         if m:
                             try: current_date = pd.to_datetime(m.group(1)).date()
                             except: pass
-                        if "星期" in val_str: current_weekday = val_str
+                        if "星期" in val_str:
+                            current_weekday = val_str
                             
                     if not current_date: continue
                     
-                    # 往下扫节次
                     for row_idx in range(len(s_df)):
-                        val_str = str(s_df.iloc[row_idx][col]).strip()
+                        val_str = str(s_df.iloc[row_idx, s_df.columns.get_loc(col)]).strip()
                         
                         if target_teacher in val_str:
-                            period = str(s_df.iloc[row_idx][period_col]).strip()
-                            time_val = str(s_df.iloc[row_idx][time_col]).strip()
+                            # 绝对定位！指哪打哪！
+                            period = str(s_df.iloc[row_idx, p_idx]).strip()
+                            time_val = str(s_df.iloc[row_idx, t_idx]).strip()
                             
-                            # 过滤掉抓到了表头的情况
-                            if period == "班级" or time_val == "时间": continue
-                            
-                            if period.lower() in ['nan', 'none', '']: period = '未知节次'
-                            if time_val.lower() in ['nan', 'none', '时长', '']: time_val = '未知时间'
+                            if period.lower() in ['nan', 'none']: period = ''
+                            if time_val.lower() in ['nan', 'none']: time_val = ''
                             time_val = re.sub(r'[-—~]+', '-', time_val)
+                            
+                            # 原封不动保留名字！绝不擅自删除！
+                            course_name = val_str 
                             
                             teacher_schedule.append({
                                 '日期': current_date,
                                 '星期': current_weekday,
-                                '节次': period,
-                                '时间': time_val,
-                                '课程内容': val_str,  # 原封不动保留所有字！
-                                '排序辅助': time_val if time_val != '未知时间' else "99:99" 
+                                '节次/分类': period,
+                                '时间/参数': time_val,
+                                '课程内容': course_name,
+                                '排序辅助': time_val if time_val else "99:99" 
                             })
                             
         if teacher_schedule:
@@ -391,13 +353,12 @@ if st.session_state['all_sheets'] is not None:
                 return f"{d_str}\n{w_str}"
                 
             ts_df['日期排版'] = ts_df.apply(format_date, axis=1)
-            ts_df = ts_df.groupby(['节次', '时间', '排序辅助', '日期排版'])['课程内容'].apply(lambda x: '\n'.join(x.unique())).reset_index()
+            ts_df = ts_df.groupby(['节次/分类', '时间/参数', '排序辅助', '日期排版'])['课程内容'].apply(lambda x: '\n'.join(x.unique())).reset_index()
             
-            # 翻转矩阵
             grid_df = pd.pivot_table(
                 ts_df,
                 values='课程内容',
-                index=['排序辅助', '节次', '时间'], 
+                index=['排序辅助', '节次/分类', '时间/参数'], 
                 columns='日期排版',
                 aggfunc=lambda x: '\n'.join(x.dropna().unique())
             ).fillna('')
@@ -405,22 +366,21 @@ if st.session_state['all_sheets'] is not None:
             grid_df = grid_df.sort_index(level='排序辅助')
             grid_df = grid_df.reset_index(level='排序辅助', drop=True)
             
-            # 正式赋予清爽的索引名
-            grid_df.index.names = ['节次', '时间'] 
+            grid_df.index.names = ['节次', '时间/姓名'] 
             grid_df.columns.name = None
             
-            st.success(f"🎉 找齐了！这是【{target_teacher}】的专属网格课表：")
+            st.success(f"🎉 生成成功！所有内容原汁原味还原：")
             st.dataframe(grid_df, use_container_width=True)
             
             formal_title = f"【{target_teacher}】专属网格课表"
             excel_data = convert_df_to_excel_pro(grid_df, sheet_name="个人课表", title=formal_title)
             st.download_button(
-                label=f"⬇️ 下载《{target_teacher}网格课表》为 Excel",
+                label=f"⬇️ 下载《{target_teacher}网格课表》",
                 data=excel_data, file_name=f"{target_teacher}_专属课表.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
         else:
-            st.warning(f"😔 翻遍了所有班级的表格，都没有找到包含【{target_teacher}】的排课信息哦。请检查名字是否输入正确！")
+            st.warning(f"😔 翻遍了全校数据，没有在 {st.session_state['t_start']} 到 {st.session_state['t_end']} 列找到包含【{target_teacher}】的排课信息！")
 
     # 模式二：【全局汇总视图】
     elif st.session_state['global_mode']:
@@ -428,24 +388,21 @@ if st.session_state['all_sheets'] is not None:
         f_start = g_dates[0]
         f_end = g_dates[1] if len(g_dates) == 2 else g_dates[0]
         targets = st.session_state['g_targets']
+        start_idx = col2num(st.session_state['g_start'])
+        end_idx = col2num(st.session_state['g_end'])
         
         report_title_prefix = "全校" if st.session_state['g_scope'] == "所有班级 (全校)" else "选中班级"
         st.markdown(f"<h3 style='color:#1e3c72;'>🌐 【{report_title_prefix}】课时总汇 📅 ({f_start} 至 {f_end})</h3>", unsafe_allow_html=True)
-        st.info(f"正在扫描以下 {len(targets)} 个班级：{', '.join(targets[:5])}{' ...' if len(targets)>5 else ''}")
+        st.info(f"扫描 {st.session_state['g_start']} 到 {st.session_state['g_end']} 列，涉及 {len(targets)} 个班级...")
         
         all_records = []
         for s_name in targets:
             if s_name not in st.session_state['all_sheets']: continue
-            # 防止全局统计扫到垃圾表
-            if not is_valid_class_sheet(s_name): continue
-                
             s_df = st.session_state['all_sheets'][s_name]
             
-            start_i = max(0, st.session_state['g_start'] - 1)
-            end_i = min(len(s_df.columns), st.session_state['g_end'])
-            if start_i >= end_i: continue
-                
-            locked_cols = s_df.columns[start_i:end_i]
+            if len(s_df.columns) <= max(start_idx, end_idx): continue
+            locked_cols = s_df.columns[start_idx : end_idx + 1]
+            
             for col in locked_cols:
                 current_date = None
                 for val in s_df[col]:
@@ -468,7 +425,7 @@ if st.session_state['all_sheets'] is not None:
             pivot_df = pd.pivot_table(stat_df, values='课时数', index='教师姓名', columns='课程类别', aggfunc='sum', fill_value=0)
             pivot_df['总计'] = pivot_df.sum(axis=1)
             
-            st.success(f"🎉 统计完毕！共 {len(stat_df['教师姓名'].unique())} 位老师上了课，总计 {stat_df['课时数'].sum()} 节。")
+            st.success(f"🎉 统计完毕！共 {len(stat_df['教师姓名'].unique())} 位老师，总计 {stat_df['课时数'].sum()} 节。")
             st.dataframe(pivot_df, use_container_width=True)
             
             formal_title = f"【{report_title_prefix}汇总】课时报表 ({f_start}至{f_end})"
@@ -492,17 +449,16 @@ if st.session_state['all_sheets'] is not None:
         st.dataframe(display_df, use_container_width=True, height=350)
 
         st.markdown("---")
-        tab1, tab2 = st.tabs(["📏 【周课表专用】垂直穿插统计", "📊 【常规明细表】手动选列统计"])
+        tab1, tab2 = st.tabs(["📏 【排课表】按列字母锁定统计", "📊 【明细表】手动选列统计"])
         
         with tab1:
-            all_cols = display_df.columns.tolist()
             col_a, col_b = st.columns(2)
-            with col_a: start_choice = st.selectbox("🚩 起始列", options=all_cols, index=14 if len(all_cols)>14 else 0)
-            with col_b: end_choice = st.selectbox("🏁 结束列", options=all_cols, index=20 if len(all_cols)>20 else len(all_cols)-1)
+            with col_a: start_choice = st.text_input("🚩 起始列 (如 Y)", value="Y")
+            with col_b: end_choice = st.text_input("🏁 结束列 (如 AE)", value="AE")
                 
-            start_idx, end_idx = all_cols.index(start_choice), all_cols.index(end_choice)
-            if start_idx <= end_idx:
-                locked_cols = all_cols[start_idx : end_idx + 1]
+            start_idx, end_idx = col2num(start_choice), col2num(end_choice)
+            if start_idx <= end_idx and len(display_df.columns) > end_idx:
+                locked_cols = display_df.columns[start_idx : end_idx + 1]
                 all_dates_in_range = set()
                 for col in locked_cols:
                     for val in display_df[col]:
@@ -519,7 +475,7 @@ if st.session_state['all_sheets'] is not None:
                         f_start = date_range[0]
                         f_end = date_range[1] if len(date_range) == 2 else date_range[0]
                         
-                        if st.button("🚀 开始本班扫描提取", type="primary"):
+                        if st.button("🚀 开始本班精准提取", type="primary"):
                             records = []
                             for col in locked_cols:
                                 current_date = None
@@ -546,7 +502,7 @@ if st.session_state['all_sheets'] is not None:
                                 formal_title = f"【{current}】课时统计报表 ({f_start}至{f_end})"
                                 excel_data = convert_df_to_excel_pro(pivot_df, sheet_name=current, title=formal_title)
                                 st.download_button(
-                                    label=f"⬇️ 导出带高级排版的《{current}报表》",
+                                    label=f"⬇️ 导出《{current}报表》",
                                     data=excel_data, file_name=f"{current}_课时报表_{f_start}至{f_end}.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 )
@@ -554,7 +510,9 @@ if st.session_state['all_sheets'] is not None:
                             else:
                                 st.warning("未找到可识别的课时。")
                 else:
-                    st.warning("⚠️ 没有扫描到包含日期的行！")
+                    st.warning("⚠️ 没有在指定的列范围内扫描到包含日期的行！")
+            else:
+                st.warning("您填写的列超出了表格范围，或起始列大于结束列。")
 
         with tab2:
             available_cols = list(display_df.columns)
@@ -581,7 +539,7 @@ if st.session_state['all_sheets'] is not None:
                     formal_title = f"【{current}】常规课时统计"
                     excel_data = convert_df_to_excel_pro(pivot_df, sheet_name=current, title=formal_title)
                     st.download_button(
-                        label="⬇️ 导出带高级排版的报表", data=excel_data, file_name=f"{current}_常规课时.xlsx",
+                        label="⬇️ 导出常规报表", data=excel_data, file_name=f"{current}_常规课时.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
                 except:
