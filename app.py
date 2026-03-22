@@ -17,6 +17,13 @@ if 'batch_export_mode' not in st.session_state: st.session_state['batch_export_m
 if 'search_teacher' not in st.session_state: st.session_state['search_teacher'] = ""
 if 'export_format' not in st.session_state: st.session_state['export_format'] = "分表导出"
 
+# 默认坐标初始化为 L, M, O, U
+if 't_period' not in st.session_state: st.session_state['t_period'] = "L"
+if 't_time' not in st.session_state: st.session_state['t_time'] = "M"
+if 't_start' not in st.session_state: st.session_state['t_start'] = "O"
+if 't_end' not in st.session_state: st.session_state['t_end'] = "U"
+if 'g_dates' not in st.session_state: st.session_state['g_dates'] = ()
+
 # ================= 1. 网页基础设置 & 究极 UI 美化 =================
 st.set_page_config(page_title="教师课时管理系统", page_icon="🎓", layout="wide")
 
@@ -183,116 +190,138 @@ def convert_stacked_dfs_to_excel_pro(df_list, sheet_name="全校总表 (垂直�
             current_row += max_row_for_df + 3 
     return output.getvalue()
 
-# 【神级核对表清洗排版】：剔除所有空行，附加异常课时计算、锁定及 1qa 密码
+# 【神级核对表专属UI排版引擎】：融合表头，彻底消除空白
 def render_verification_sheet(worksheet, grid_df, class_name, f_start, f_end):
     R, C = grid_df.shape
     title = f"【{class_name}】课时核对表 ({f_start} 至 {f_end})"
     
+    # 样式定义
     title_font = Font(size=18, bold=True, color="000000")
     header_font = Font(color="FFFFFF", bold=True, size=13)
-    std_fill = PatternFill(start_color="1E3C72", end_color="1E3C72", fill_type="solid") 
-    act_fill = PatternFill(start_color="D35400", end_color="D35400", fill_type="solid") 
+    std_fill = PatternFill(start_color="1E3C72", end_color="1E3C72", fill_type="solid") # 深蓝主标题
+    act_fill = PatternFill(start_color="D35400", end_color="D35400", fill_type="solid") # 警示橙标题
+    # 【新增】：漂亮的灰蓝色列名表头
+    col_header_fill = PatternFill(start_color="4A6984", end_color="4A6984", fill_type="solid") 
+    
     center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-    
     unlocked = Protection(locked=False)
     
+    # 1. 抽离并捏合表头 (消除前两行的空洞)
+    headers = ["节次", "时间"]
+    for c in range(2, C):
+        d_val = str(grid_df.iloc[0, c]).strip()
+        w_val = str(grid_df.iloc[1, c]).strip()
+        if d_val.lower() in ['nan', 'none', 'nat', '0', '0.0', '']: d_val = ""
+        if w_val.lower() in ['nan', 'none', 'nat', '0', '0.0', '']: w_val = ""
+        h_text = f"{d_val}\n{w_val}".strip()
+        headers.append(h_text)
+        
+    # 提取真正的排课数据区 (从第3行开始)
+    data_df = grid_df.iloc[2:].reset_index(drop=True)
+    data_R = len(data_df)
+    
+    # ---- 写入大标题 ----
     worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=C)
     cell = worksheet.cell(row=1, column=1, value=title)
     cell.font = title_font; cell.alignment = center_align
     worksheet.row_dimensions[1].height = 40
     
-    std_start_row = 3
-    worksheet.merge_cells(start_row=std_start_row, start_column=1, end_row=std_start_row, end_column=C)
-    cell = worksheet.cell(row=std_start_row, column=1, value="⬇️ === 标准课表 (此区域已锁定保护，禁止修改) === ⬇️")
+    # ---- 写入【标准区】 ----
+    std_title_row = 3
+    worksheet.merge_cells(start_row=std_title_row, start_column=1, end_row=std_title_row, end_column=C)
+    cell = worksheet.cell(row=std_title_row, column=1, value="⬇️ === 标准课表 (此区域已锁定保护，禁止修改) === ⬇️")
     cell.font = header_font; cell.fill = std_fill; cell.alignment = center_align
-    worksheet.row_dimensions[std_start_row].height = 35
+    worksheet.row_dimensions[std_title_row].height = 35
     
-    for r in range(R):
-        worksheet.row_dimensions[std_start_row + 1 + r].height = 25 if r > 1 else 30
+    std_header_row = 4
+    worksheet.row_dimensions[std_header_row].height = 40
+    for c in range(C):
+        cell = worksheet.cell(row=std_header_row, column=c + 1, value=headers[c])
+        cell.font = header_font; cell.fill = col_header_fill
+        cell.alignment = center_align; cell.border = thin_border
+        
+    std_data_start = 5
+    for r in range(data_R):
+        worksheet.row_dimensions[std_data_start + r].height = 30
         for c in range(C):
-            val = str(grid_df.iloc[r, c]).strip()
+            val = str(data_df.iloc[r, c]).strip()
             if val.lower() in ['nan', 'none', 'nat', '0', '0.0']: val = ""
-            cell = worksheet.cell(row=std_start_row + 1 + r, column=c + 1, value=val)
+            cell = worksheet.cell(row=std_data_start + r, column=c + 1, value=val)
             cell.alignment = center_align; cell.border = thin_border
-            if c < 2 or r == 0: cell.font = Font(bold=True)
-            elif r == 1 and "星期" in val: cell.font = Font(bold=True)
-    
-    act_start_row = std_start_row + 1 + R + 2
-    worksheet.merge_cells(start_row=act_start_row, start_column=1, end_row=act_start_row, end_column=C)
-    cell = worksheet.cell(row=act_start_row, column=1, value="✍️ === 实际上课核对 (仅允许修改下方空白区，修改后自动红底黑字标红) === ✍️")
+            if c < 2: cell.font = Font(bold=True)
+            
+    # ---- 写入【实际修改区】 ----
+    act_title_row = std_data_start + data_R + 2
+    worksheet.merge_cells(start_row=act_title_row, start_column=1, end_row=act_title_row, end_column=C)
+    cell = worksheet.cell(row=act_title_row, column=1, value="✍️ === 实际上课核对 (仅允许修改下方空白区，修改后自动红底黑字标红) === ✍️")
     cell.font = header_font; cell.fill = act_fill; cell.alignment = center_align
-    worksheet.row_dimensions[act_start_row].height = 35
+    worksheet.row_dimensions[act_title_row].height = 35
     
-    for r in range(R):
-        worksheet.row_dimensions[act_start_row + 1 + r].height = 25 if r > 1 else 30
+    act_header_row = act_title_row + 1
+    worksheet.row_dimensions[act_header_row].height = 40
+    for c in range(C):
+        cell = worksheet.cell(row=act_header_row, column=c + 1, value=headers[c])
+        cell.font = header_font; cell.fill = col_header_fill
+        cell.alignment = center_align; cell.border = thin_border
+        
+    act_data_start = act_header_row + 1
+    for r in range(data_R):
+        worksheet.row_dimensions[act_data_start + r].height = 30
         for c in range(C):
-            val = str(grid_df.iloc[r, c]).strip()
+            val = str(data_df.iloc[r, c]).strip()
             if val.lower() in ['nan', 'none', 'nat', '0', '0.0']: val = ""
-            cell = worksheet.cell(row=act_start_row + 1 + r, column=c + 1, value=val)
+            cell = worksheet.cell(row=act_data_start + r, column=c + 1, value=val)
             cell.alignment = center_align; cell.border = thin_border
-            if c < 2 or r == 0: cell.font = Font(bold=True)
-            elif r == 1 and "星期" in val: cell.font = Font(bold=True)
-                
-            # 给除了左侧表头和顶端日期星期的格子解锁权限
-            if r >= 2 and c >= 2: cell.protection = unlocked
-    
+            if c < 2: cell.font = Font(bold=True)
+            if c >= 2: cell.protection = unlocked # 解锁修改权限
+            
     for i in range(1, C + 1):
         worksheet.column_dimensions[get_column_letter(i)].width = 14 if i <= 2 else 20
-    
-    # 【黑字红底的极强对比度警示】
+        
+    # ---- 植入自动标红与统计公式 ----
     start_col_letter = get_column_letter(3)
     end_col_letter = get_column_letter(C)
-    actual_data_start_row = act_start_row + 3 
-    actual_data_end_row = act_start_row + R
-    std_data_start_row = std_start_row + 3
-    std_data_end_row = std_start_row + R
     
-    range_string = f"{start_col_letter}{actual_data_start_row}:{end_col_letter}{actual_data_end_row}"
-    formula = f'{start_col_letter}{actual_data_start_row}<>{start_col_letter}{std_data_start_row}'
-    
+    # 红底黑字标红规则
+    range_string = f"{start_col_letter}{act_data_start}:{end_col_letter}{act_data_start + data_R - 1}"
+    formula = f'{start_col_letter}{act_data_start}<>{start_col_letter}{std_data_start}'
     pure_red_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
     bold_black_font = Font(color="000000", bold=True)
     rule = FormulaRule(formula=[formula], stopIfTrue=True, fill=pure_red_fill, font=bold_black_font)
     worksheet.conditional_formatting.add(range_string, rule)
     
-    # 自动统计异常情况
-    summary_row_1 = act_start_row + R + 1
-    summary_row_2 = act_start_row + R + 2
+    # 统计区域
+    summary_row_1 = act_data_start + data_R + 1
+    summary_row_2 = summary_row_1 + 1
     summary_fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid") 
     
     worksheet.merge_cells(start_row=summary_row_1, start_column=1, end_row=summary_row_1, end_column=2)
     cell = worksheet.cell(row=summary_row_1, column=1, value="🚨 每日异常标红数：")
-    cell.font = Font(bold=True, color="000000")
-    cell.alignment = Alignment(horizontal='right', vertical='center')
+    cell.font = Font(bold=True, color="000000"); cell.alignment = Alignment(horizontal='right', vertical='center')
     
     for c in range(3, C + 1):
         col_letter = get_column_letter(c)
-        sum_formula = f'=SUMPRODUCT(--({col_letter}{actual_data_start_row}:{col_letter}{actual_data_end_row}<>{col_letter}{std_data_start_row}:{col_letter}{std_data_end_row}))'
+        sum_formula = f'=SUMPRODUCT(--({col_letter}{act_data_start}:{col_letter}{act_data_start + data_R - 1}<>{col_letter}{std_data_start}:{col_letter}{std_data_start + data_R - 1}))'
         cell = worksheet.cell(row=summary_row_1, column=c, value=sum_formula)
-        cell.font = Font(bold=True, color="FF0000", size=12)
-        cell.alignment = center_align
+        cell.font = Font(bold=True, color="FF0000", size=12); cell.alignment = center_align
 
     worksheet.merge_cells(start_row=summary_row_2, start_column=1, end_row=summary_row_2, end_column=2)
     cell = worksheet.cell(row=summary_row_2, column=1, value="📢 本班本周异常总计：")
-    cell.font = Font(bold=True, color="000000")
-    cell.alignment = Alignment(horizontal='right', vertical='center')
+    cell.font = Font(bold=True, color="000000"); cell.alignment = Alignment(horizontal='right', vertical='center')
     
     worksheet.merge_cells(start_row=summary_row_2, start_column=3, end_row=summary_row_2, end_column=C)
     total_formula = f'=SUM({start_col_letter}{summary_row_1}:{end_col_letter}{summary_row_1})'
     cell = worksheet.cell(row=summary_row_2, column=3, value=total_formula)
-    cell.font = Font(bold=True, color="FF0000", size=14)
-    cell.alignment = Alignment(horizontal='left', vertical='center')
+    cell.font = Font(bold=True, color="FF0000", size=14); cell.alignment = Alignment(horizontal='left', vertical='center')
     cell.number_format = '0 "节"'
     
     for r_idx in [summary_row_1, summary_row_2]:
         worksheet.row_dimensions[r_idx].height = 35
         for c_idx in range(1, C + 1):
             c_cell = worksheet.cell(row=r_idx, column=c_idx)
-            c_cell.fill = summary_fill
-            c_cell.border = thin_border
+            c_cell.fill = summary_fill; c_cell.border = thin_border
             
-    # 【开启全局锁定】密码 1qa
     worksheet.protection.sheet = True
     worksheet.protection.password = '1qa'
 
@@ -402,9 +431,8 @@ if uploaded_file is not None and st.session_state['all_sheets'] is None:
 if st.session_state['all_sheets'] is not None:
     valid_classes = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
     
-    with st.sidebar.expander("📍 全局坐标与目标时间", expanded=True): # 默认展开，让您一眼看到L, M, O, U
+    with st.sidebar.expander("📍 全局坐标与目标时间", expanded=True): 
         col_c1, col_c2 = st.columns(2)
-        # 强制默认加载这些字符
         t_period = st.text_input("【节次】", value="L")
         t_time = st.text_input("【时间】", value="M")
         col_c3, col_c4 = st.columns(2)
@@ -501,11 +529,9 @@ if st.session_state['all_sheets'] is not None:
 
     # ================= 核心视图分支 =================
     
-    # 模式一：【批量导出工具箱：班主任核对表ZIP打包 / 教师全校课表打包】
     if st.session_state.get('batch_export_mode'):
         export_mode_type = st.session_state['export_format']
         
-        # 1. 班主任专属核对表提取逻辑
         if "班主任核对表" in export_mode_type:
             f_dates = st.session_state.get('g_dates', [])
             f_start = f_dates[0] if len(f_dates)>0 else "无开始时间"
@@ -522,7 +548,7 @@ if st.session_state['all_sheets'] is not None:
             class_grids = {}
             valid_classes_to_search = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
             
-            with st.spinner('正在切片全校各班的标准排课数据，进行无情净化加密...'):
+            with st.spinner('正在为您生成极致排版的智能核对表，这可能需要几秒钟...'):
                 for s_name in valid_classes_to_search:
                     s_df = st.session_state['all_sheets'][s_name]
                     if len(s_df.columns) <= max(p_idx, t_idx, end_idx): continue
@@ -534,8 +560,7 @@ if st.session_state['all_sheets'] is not None:
                         if re.search(r'第[一二三四五六七八九十0-9\s]+周', row_all_text):
                             if current_block is not None and current_date is not None:
                                 blocks.append((current_date, current_block))
-                            current_block = None
-                            current_date = None
+                            current_block = None; current_date = None
                             continue
                             
                         val_str = str(s_df.iloc[row_idx, start_idx]).strip()
@@ -566,8 +591,7 @@ if st.session_state['all_sheets'] is not None:
                         cleaned_rows = []
                         for i in range(len(grid_df)):
                             if i == 0 or i == 1:
-                                cleaned_rows.append(i) 
-                                continue
+                                cleaned_rows.append(i); continue
                                 
                             row_vals = [str(x).strip().lower() for x in grid_df.iloc[i, :].values]
                             is_all_empty = all((not v or v in ['0', '0.0', 'nan', 'none', 'nat', 'null']) for v in row_vals)
@@ -579,22 +603,13 @@ if st.session_state['all_sheets'] is not None:
                             cleaned_rows.append(i)
                                 
                         if cleaned_rows:
-                            grid_df = grid_df.iloc[cleaned_rows].copy().reset_index(drop=True)
-                            
-                            for c_idx in range(2, len(grid_df.columns)):
-                                val = str(grid_df.iloc[0, c_idx])
-                                m = re.search(r'(\d{4})[-/年\.](\d{1,2})[-/月\.](\d{1,2})', val)
-                                if m:
-                                    grid_df.iloc[0, c_idx] = f"{m.group(1)}-{m.group(2).zfill(2)}-{m.group(3).zfill(2)}"
-                                    
-                            class_grids[s_name] = grid_df
+                            class_grids[s_name] = grid_df.iloc[cleaned_rows].copy().reset_index(drop=True)
                         
             if class_grids:
                 if "ZIP" in export_mode_type:
                     zip_data = convert_verification_to_zip(class_grids, f_start, f_end)
-                    st.success(f"🎉 成功生成！已为您把全校 {len(class_grids)} 个班级的独立表格打包成 ZIP！【已加锁保护、带统计引擎】")
+                    st.success(f"🎉 成功生成！已为您把全校 {len(class_grids)} 个班级的独立表格打包成 ZIP！【高级表头排版已应用】")
                     st.download_button(label=f"⬇️ 立即下载 ZIP 压缩包 (发群专用)", data=zip_data, file_name=f"班主任课时核对表大合集_{f_start}至{f_end}.zip", mime="application/zip")
-                    st.info("💡 解压这个 ZIP 文件后，每个 Excel 都内置了【智能统计器】，班主任修改底部的白色格子后，不仅自动变红底黑字，最下面还会帮你算出总共变了多少节！解锁密码: 1qa")
                 else:
                     excel_data = convert_verification_dfs_to_excel(class_grids, f_start, f_end)
                     st.success(f"🎉 成功生成！全校 {len(class_grids)} 个班级已收录在同一个 Excel 文件的不同 Sheet 里！")
@@ -602,7 +617,6 @@ if st.session_state['all_sheets'] is not None:
             else:
                 st.warning(f"😔 在您选定的日期 {f_start} 到 {f_end} 之间，没有找到有效的排课区域。")
 
-        # 2. 教师专属课表提取逻辑 
         else:
             is_first_week_only = "第一周" in st.session_state.get('schedule_range', '')
             title_suffix = "【单周课表】" if is_first_week_only else "【全周期课表】"
@@ -694,12 +708,11 @@ if st.session_state['all_sheets'] is not None:
                 else: excel_data = convert_multiple_dfs_to_excel_pro(df_dict)
                     
                 status_text.empty(); progress_bar.empty()
-                st.success(f"🎉 终极打包完成！系统已成功梳理出全校 **{len(teacher_names)}** 位教师！空行已全面清退！")
+                st.success(f"🎉 终极打包完成！系统已成功梳理出全校 **{len(teacher_names)}** 位教师！")
                 download_name = f"全校教师课表_打印汇总版_{'首周' if is_first_week_only else '全周期'}.xlsx" if "单表" in export_mode_type else f"全校教师课表_分Sheet装_{'首周' if is_first_week_only else '全周期'}.xlsx"
                 
                 st.download_button(label=f"⬇️ 立即下载《{download_name}》", data=excel_data, file_name=download_name, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    # 模式二：【教师单人二维网格课表】 
     elif st.session_state['teacher_mode']:
         target_teacher = st.session_state['search_teacher']
         is_first_week_only = "第一周" in st.session_state.get('schedule_range', '')
@@ -803,7 +816,6 @@ if st.session_state['all_sheets'] is not None:
         else:
             st.warning(f"😔 没有找到包含【{target_teacher}】的排课信息！")
 
-    # 模式三：【全局发薪汇总统计】 
     elif st.session_state['global_mode']:
         f_dates = st.session_state['g_dates']
         targets = st.session_state['g_targets']
@@ -867,7 +879,6 @@ if st.session_state['all_sheets'] is not None:
         else:
             st.warning("⚠️ 在指定的范围中，未抓取到有效课时！")
             
-    # 模式四：【单班级管理视图】
     else:
         current = st.session_state['current_sheet']
         st.markdown(f"<h4 style='color:#1e3c72;'>👁️ 当前查看 : 【 {current} 】</h4>", unsafe_allow_html=True)
