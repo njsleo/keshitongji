@@ -8,7 +8,7 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side, Protecti
 from openpyxl.utils import get_column_letter
 from openpyxl.formatting.rule import FormulaRule
 
-# ================= 0. 状态初始化 (预设默认值) =================
+# ================= 0. 状态初始化 =================
 if 'all_sheets' not in st.session_state: st.session_state['all_sheets'] = None
 if 'current_sheet' not in st.session_state: st.session_state['current_sheet'] = None
 if 'global_mode' not in st.session_state: st.session_state['global_mode'] = False
@@ -16,13 +16,6 @@ if 'teacher_mode' not in st.session_state: st.session_state['teacher_mode'] = Fa
 if 'batch_export_mode' not in st.session_state: st.session_state['batch_export_mode'] = False
 if 'search_teacher' not in st.session_state: st.session_state['search_teacher'] = ""
 if 'export_format' not in st.session_state: st.session_state['export_format'] = "分表导出"
-
-# 默认坐标初始化为 L, M, O, U
-if 't_period' not in st.session_state: st.session_state['t_period'] = "L"
-if 't_time' not in st.session_state: st.session_state['t_time'] = "M"
-if 't_start' not in st.session_state: st.session_state['t_start'] = "O"
-if 't_end' not in st.session_state: st.session_state['t_end'] = "U"
-if 'g_dates' not in st.session_state: st.session_state['g_dates'] = ()
 
 # ================= 1. 网页基础设置 & 究极 UI 美化 =================
 st.set_page_config(page_title="教师课时管理系统", page_icon="🎓", layout="wide")
@@ -247,6 +240,7 @@ def render_verification_sheet(worksheet, grid_df, class_name, f_start, f_end):
     for i in range(1, C + 1):
         worksheet.column_dimensions[get_column_letter(i)].width = 14 if i <= 2 else 20
     
+    # 【黑字红底的极强对比度警示】
     start_col_letter = get_column_letter(3)
     end_col_letter = get_column_letter(C)
     actual_data_start_row = act_start_row + 3 
@@ -408,6 +402,22 @@ if uploaded_file is not None and st.session_state['all_sheets'] is None:
 if st.session_state['all_sheets'] is not None:
     valid_classes = [s for s in st.session_state['all_sheets'].keys() if not any(kw in s for kw in ['总表', '分表', '汇总'])]
     
+    with st.sidebar.expander("📍 全局坐标与目标时间", expanded=True): # 默认展开，让您一眼看到L, M, O, U
+        col_c1, col_c2 = st.columns(2)
+        # 强制默认加载这些字符
+        t_period = st.text_input("【节次】", value="L")
+        t_time = st.text_input("【时间】", value="M")
+        col_c3, col_c4 = st.columns(2)
+        t_start = st.text_input("【排课起】", value="O")
+        t_end = st.text_input("【排课止】", value="U")
+        g_dates = st.date_input("🗓️ 选定目标时间段 (某周/发薪周期)", [])
+        
+        st.session_state['t_period'] = t_period
+        st.session_state['t_time'] = t_time
+        st.session_state['t_start'] = t_start
+        st.session_state['t_end'] = t_end
+        st.session_state['g_dates'] = g_dates
+
     with st.sidebar.expander("🧑‍🏫 单人课表提取器", expanded=False):
         search_input = st.text_input("🔍 查找特定教师：", placeholder="例如：聂俊生")
         schedule_range_single = st.radio("📅 课表周次选择", ["全部周次 (长表)", "仅第一周 (经典单周)"], key="sr_single")
@@ -434,7 +444,7 @@ if st.session_state['all_sheets'] is not None:
             
         if st.button("🚀 一键提取并打包下发", use_container_width=True):
             if "班主任核对表" in export_format and len(st.session_state.get('g_dates', [])) < 1:
-                st.error("⚠️ 请先在下方【📍 全局坐标与目标时间】中设定日期范围！")
+                st.error("⚠️ 请先在上方【📍 全局坐标与目标时间】中设定日期范围！")
             else:
                 st.session_state['batch_export_mode'] = True
                 st.session_state['teacher_mode'] = False
@@ -459,15 +469,6 @@ if st.session_state['all_sheets'] is not None:
                 st.session_state['batch_export_mode'] = False
                 st.session_state['g_targets'] = target_classes
                 st.session_state['g_scope'] = scope
-
-    with st.sidebar.expander("📍 全局坐标与目标时间", expanded=False):
-        col_c1, col_c2 = st.columns(2)
-        with col_c1: st.text_input("【节次】", key="t_period")
-        with col_c2: st.text_input("【时间】", key="t_time")
-        col_c3, col_c4 = st.columns(2)
-        with col_c3: st.text_input("【排课起】", key="t_start")
-        with col_c4: st.text_input("【排课止】", key="t_end")
-        st.date_input("🗓️ 选定目标时间段 (某周/发薪周期)", key="g_dates")
 
 # ================= 动态顶部导航 =================
 if st.session_state['all_sheets'] is not None:
@@ -504,6 +505,7 @@ if st.session_state['all_sheets'] is not None:
     if st.session_state.get('batch_export_mode'):
         export_mode_type = st.session_state['export_format']
         
+        # 1. 班主任专属核对表提取逻辑
         if "班主任核对表" in export_mode_type:
             f_dates = st.session_state.get('g_dates', [])
             f_start = f_dates[0] if len(f_dates)>0 else "无开始时间"
@@ -600,6 +602,7 @@ if st.session_state['all_sheets'] is not None:
             else:
                 st.warning(f"😔 在您选定的日期 {f_start} 到 {f_end} 之间，没有找到有效的排课区域。")
 
+        # 2. 教师专属课表提取逻辑 
         else:
             is_first_week_only = "第一周" in st.session_state.get('schedule_range', '')
             title_suffix = "【单周课表】" if is_first_week_only else "【全周期课表】"
@@ -725,7 +728,8 @@ if st.session_state['all_sheets'] is not None:
                         
                         row_all_text = "".join([str(x) for x in s_df.iloc[row_idx, :].values])
                         if re.search(r'第[一二三四五六七八九十0-9\s]+周', row_all_text):
-                            current_date = None; continue
+                            current_date = None
+                            continue
                                 
                         m = re.search(r'(\d{4})[-/年\.](\d{1,2})[-/月\.](\d{1,2})', val_str)
                         if m:
@@ -737,7 +741,8 @@ if st.session_state['all_sheets'] is not None:
                             continue 
                             
                         if "星期" in val_str and len(val_str) <= 10:
-                            current_weekday = val_str; continue
+                            current_weekday = val_str
+                            continue
                             
                         if not current_date: continue
                         
@@ -800,7 +805,7 @@ if st.session_state['all_sheets'] is not None:
 
     # 模式三：【全局发薪汇总统计】 
     elif st.session_state['global_mode']:
-        f_dates = st.session_state.get('g_dates', [])
+        f_dates = st.session_state['g_dates']
         targets = st.session_state['g_targets']
         start_idx = col2num(st.session_state['t_start'])
         end_idx = col2num(st.session_state['t_end'])
@@ -820,7 +825,6 @@ if st.session_state['all_sheets'] is not None:
                     current_date = None
                     for row_idx in range(len(s_df)):
                         val_str = str(s_df.iloc[row_idx, col_idx]).strip()
-                        
                         row_all_text = "".join([str(x) for x in s_df.iloc[row_idx, :].values])
                         if re.search(r'第[一二三四五六七八九十0-9\s]+周', row_all_text):
                             current_date = None
